@@ -2,7 +2,7 @@ import * as Updates from 'expo-updates';
 import { useEffect, useState } from 'react';
 
 import { UseUpdatesStateType, UseUpdatesReturnType, UseUpdatesEventType } from './UseUpdates.types';
-import { emitEvent, useUpdateEvents } from './UseUpdatesEmitter';
+import { emitUseUpdatesEvent, useUpdateEvents } from './UseUpdatesEmitter';
 import { currentlyRunning, availableUpdateFromContext } from './UseUpdatesUtils';
 
 /**
@@ -44,13 +44,13 @@ export const runUpdate = () => {
 export const readLogEntries: (maxAge?: number) => void = (maxAge: number = 3600000) => {
   Updates.readLogEntriesAsync(maxAge)
     .then((logEntries) => {
-      emitEvent({
+      emitUseUpdatesEvent({
         type: UseUpdatesEventType.READ_LOG_ENTRIES_COMPLETE,
         logEntries,
       });
     })
     .catch((error) => {
-      emitEvent({
+      emitUseUpdatesEvent({
         type: UseUpdatesEventType.ERROR,
         error,
       });

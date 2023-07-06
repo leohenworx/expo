@@ -8,17 +8,10 @@ function _getEmitter() {
     }
     return _emitter;
 }
-function _addListener(listener) {
+function addUseUpdatesListener(listener) {
     const emitter = _getEmitter();
     return emitter.addListener('Expo.useUpdatesEvent', listener);
 }
-// What JS code uses to emit events
-export const emitEvent = (event) => {
-    if (!_emitter) {
-        throw new Error(`EventEmitter must be initialized to use from its listener`);
-    }
-    _emitter.emit('Expo.useUpdatesEvent', event);
-};
 export const useUpdateEvents = (listener) => {
     const listenerRef = useRef();
     useEffect(() => {
@@ -26,12 +19,26 @@ export const useUpdateEvents = (listener) => {
     }, [listener]);
     useEffect(() => {
         if (listenerRef.current) {
-            const subscription = _addListener(listenerRef.current);
+            const subscription = addUseUpdatesListener(listenerRef.current);
             return () => {
                 subscription.remove();
             };
         }
         return undefined;
     }, []);
+};
+// Allows JS to emit a useUpdates event (useful for testing)
+export const emitUseUpdatesEvent = (event) => {
+    if (!_emitter) {
+        throw new Error(`EventEmitter must be initialized to use from its listener`);
+    }
+    _emitter?.emit('Expo.useUpdatesEvent', event);
+};
+// Allows JS to emit a state change event (useful for testing)
+export const emitStateChangeEvent = (event) => {
+    if (!_emitter) {
+        throw new Error(`EventEmitter must be initialized to use from its listener`);
+    }
+    _emitter?.emit('Expo.updatesStateChangeEvent', event);
 };
 //# sourceMappingURL=UseUpdatesEmitter.js.map

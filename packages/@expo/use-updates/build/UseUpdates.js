@@ -1,7 +1,7 @@
 import * as Updates from 'expo-updates';
 import { useEffect, useState } from 'react';
 import { UseUpdatesEventType } from './UseUpdates.types';
-import { emitEvent, useUpdateEvents } from './UseUpdatesEmitter';
+import { emitUseUpdatesEvent, useUpdateEvents } from './UseUpdatesEmitter';
 import { currentlyRunning, availableUpdateFromContext } from './UseUpdatesUtils';
 /**
  * Calls [`Updates.checkForUpdateAsync()`](https://docs.expo.dev/versions/latest/sdk/updates/#updatescheckforupdateasync)
@@ -40,13 +40,13 @@ export const runUpdate = () => {
 export const readLogEntries = (maxAge = 3600000) => {
     Updates.readLogEntriesAsync(maxAge)
         .then((logEntries) => {
-        emitEvent({
+        emitUseUpdatesEvent({
             type: UseUpdatesEventType.READ_LOG_ENTRIES_COMPLETE,
             logEntries,
         });
     })
         .catch((error) => {
-        emitEvent({
+        emitUseUpdatesEvent({
             type: UseUpdatesEventType.ERROR,
             error,
         });
