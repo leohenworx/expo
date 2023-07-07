@@ -1,6 +1,7 @@
 import * as Updates from 'expo-updates';
+import type { UpdatesNativeStateMachineContext } from 'expo-updates';
 
-import type { CurrentlyRunningInfo } from './UseUpdates.types';
+import type { CurrentlyRunningInfo, UseUpdatesStateType } from './UseUpdates.types';
 
 // The currently running info, constructed from Updates constants
 export const currentlyRunning: CurrentlyRunningInfo = {
@@ -51,4 +52,38 @@ export const downloadedUpdateFromContext = (context: { [key: string]: any }) => 
         isRollback,
       }
     : undefined;
+};
+
+// Default useUpdates() state
+export const defaultUseUpdatesState: UseUpdatesStateType = {
+  isChecking: false,
+  isDownloading: false,
+  isUpdateAvailable: false,
+  isUpdatePending: false,
+};
+
+// Transform the useUpdates() state based on native state machine context
+export const reduceUpdatesStateFromContext = (
+  updatesState: UseUpdatesStateType,
+  context: UpdatesNativeStateMachineContext
+) => {
+  if (context.isChecking) {
+    return {
+      ...updatesState,
+      isChecking: true,
+      lastCheckForUpdateTimeSinceRestart: new Date(),
+    };
+  }
+  const availableUpdate = availableUpdateFromContext(context);
+  const downloadedUpdate = downloadedUpdateFromContext(context);
+  return {
+    ...updatesState,
+    isUpdateAvailable: context.isUpdateAvailable,
+    isUpdatePending: context.isUpdatePending || availableUpdate?.isRollback || false,
+    isChecking: context.isChecking,
+    isDownloading: context.isDownloading,
+    availableUpdate,
+    downloadedUpdate,
+    error: context.checkError || context.downloadError,
+  };
 };

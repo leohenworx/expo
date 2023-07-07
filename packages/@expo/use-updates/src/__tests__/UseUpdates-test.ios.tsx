@@ -1,10 +1,9 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import * as Updates from 'expo-updates';
-import type { Manifest, UpdatesLogEntry } from 'expo-updates';
+import type { Manifest, UpdatesNativeStateChangeEvent, UpdatesLogEntry } from 'expo-updates';
 import '@testing-library/jest-native/extend-expect';
 import React from 'react';
 
-import { UpdatesNativeStateChangeEvent } from '../UseUpdates.types';
 import { emitStateChangeEvent } from '../UseUpdatesEmitter';
 import { availableUpdateFromContext } from '../UseUpdatesUtils';
 import UseUpdatesTestApp from './UseUpdatesTestApp';

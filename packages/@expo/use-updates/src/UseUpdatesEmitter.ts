@@ -1,8 +1,8 @@
-import { DeviceEventEmitter } from 'expo-modules-core';
+import type { UpdatesNativeStateChangeEvent } from 'expo-updates';
 import { EventEmitter, EventSubscription } from 'fbemitter';
 import { useEffect, useRef } from 'react';
 
-import { UseUpdatesEvent, UpdatesNativeStateChangeEvent } from './UseUpdates.types';
+import { UseUpdatesEvent } from './UseUpdates.types';
 
 // Emitter and hook specifically for @expo/use-updates module
 

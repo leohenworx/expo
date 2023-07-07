@@ -42,7 +42,7 @@ export const useUpdateEvents = (listener) => {
 /**
  * @hidden
  */
-export const useUpdatesState = () => {
+export const useNativeStateMachineContext = () => {
     // Hook to return the Updates state machine context maintained
     // in native code.
     // Eventually, this will be used to construct the information returned by `useUpdates()`.
