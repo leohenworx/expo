@@ -1,12 +1,7 @@
 /**
  * Test app that shows some features of the Updates API
  */
-import {
-  checkForUpdate,
-  downloadUpdate,
-  useUpdates,
-  useUpdatesState,
-} from '@expo/use-updates';
+import { checkForUpdate, downloadUpdate, useUpdates } from '@expo/use-updates';
 import { StatusBar } from 'expo-status-bar';
 import * as Updates from 'expo-updates';
 import React, { useEffect } from 'react';
@@ -23,16 +18,8 @@ export default function App() {
 
   const checkAutomaticallyMessage = `Automatic check setting = ${Updates.checkAutomatically}`;
 
-  const {
-    isUpdateAvailable,
-    isUpdatePending,
-    isChecking,
-    isDownloading,
-    availableUpdate,
-    error,
-  } = useUpdates();
-
-  const state = useUpdatesState();
+  const { isUpdateAvailable, isUpdatePending, isChecking, isDownloading, availableUpdate, error } =
+    useUpdates();
 
   useEffect(() => {
     const checkingMessage = isChecking ? 'Checking for an update...\n' : '';
@@ -40,23 +27,18 @@ export default function App() {
     const availableMessage = isUpdateAvailable
       ? availableUpdate?.isRollback
         ? 'Rollback directive found\n'
-        : `Found a new update: manifest = \n${manifestToString(
-            availableUpdate?.manifest,
-          )}...` + '\n'
+        : `Found a new update: manifest = \n${manifestToString(availableUpdate?.manifest)}...` +
+          '\n'
       : 'No new update available\n';
     const errorMessage = error ? `Error in update API: ${error.message}` : '';
-    setUpdateMessage(
-      checkingMessage + downloadingMessage + availableMessage + errorMessage,
-    );
+    setUpdateMessage(checkingMessage + downloadingMessage + availableMessage + errorMessage);
   }, [isUpdateAvailable, isUpdatePending, isChecking, isDownloading, error]);
 
   useEffect(() => {
     const handleReloadAsync = async () => {
       let countdown = 5;
       while (countdown > 0) {
-        setUpdateMessage(
-          `Downloaded update... launching it in ${countdown} seconds.`,
-        );
+        setUpdateMessage(`Downloaded update... launching it in ${countdown} seconds.`);
         countdown = countdown - 1;
         await delay(1000);
       }
@@ -90,7 +72,6 @@ export default function App() {
       <Text> </Text>
       <Text style={styles.titleText}>Status</Text>
       <Text style={styles.updateMessageText}>{updateMessage}</Text>
-      <Text style={styles.updateMessageText}>{JSON.stringify(state)}</Text>
       <Pressable style={styles.button} onPress={handleCheckButtonPress}>
         <Text style={styles.buttonText}>Check manually for updates</Text>
       </Pressable>
@@ -161,7 +142,7 @@ const manifestToString = (manifest?: Updates.Manifest) => {
           // metadata: manifest.metadata,
         },
         null,
-        2,
+        2
       )
     : 'null';
 };

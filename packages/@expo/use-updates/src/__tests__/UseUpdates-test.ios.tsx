@@ -21,6 +21,7 @@ jest.mock('expo-updates', () => {
     reload: jest.fn(),
     readLogEntriesAsync: jest.fn(),
     useUpdateEvents: jest.fn(),
+    nativeStateMachineContext: undefined,
   };
 });
 
