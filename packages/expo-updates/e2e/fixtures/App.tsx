@@ -42,7 +42,13 @@ export default function App() {
   const [extraParamsString, setExtraParamsString] = React.useState('');
   const [nativeStateContextString, setNativeStateContextString] = React.useState('{}');
 
-  const { currentlyRunning, availableUpdate } = useUpdates();
+  const {
+    currentlyRunning,
+    availableUpdate,
+    downloadedUpdate,
+    isUpdateAvailable,
+    isUpdatePending,
+  } = useUpdates();
 
   Updates.useUpdateEvents((event) => {
     setLastUpdateEventType(event.type);
@@ -155,6 +161,18 @@ export default function App() {
       <TestValue testID="isEmbeddedLaunch" value={`${currentlyRunning.isEmbeddedLaunch}`} />
       <TestValue testID="availableUpdateID" value={`${availableUpdate?.updateId}`} />
       <TestValue testID="extraParamsString" value={`${extraParamsString}`} />
+
+      <TestValue testID="state.isUpdateAvailable" value={`${isUpdateAvailable}`} />
+      <TestValue testID="state.isUpdatePending" value={`${isUpdatePending}`} />
+      <TestValue testID="state.isRollback" value={`${availableUpdate?.isRollback ?? false}`} />
+      <TestValue
+        testID="state.latestManifest.id"
+        value={`${availableUpdate?.manifest?.id || ''}`}
+      />
+      <TestValue
+        testID="state.downloadedManifest.id"
+        value={`${downloadedUpdate?.manifest?.id || ''}`}
+      />
 
       <Text>Log messages</Text>
       <ScrollView contentContainerStyle={styles.logEntriesContainer}>

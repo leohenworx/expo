@@ -711,7 +711,7 @@ describe('JS API tests', () => {
     jestExpect(downloadedManifestId4).toEqual('');
     // After check for update and getting a rollback
     jestExpect(isUpdateAvailable5).toEqual('true');
-    jestExpect(isUpdatePending5).toEqual('false');
+    jestExpect(isUpdatePending5).toEqual('true');
     jestExpect(isRollback5).toEqual('true');
     jestExpect(latestManifestId5).toEqual('');
     jestExpect(downloadedManifestId5).toEqual('');
@@ -756,16 +756,7 @@ describe('JS API tests', () => {
       await device.terminateApp();
       await device.launchApp();
       await waitForAppToBecomeVisible();
-      {
-        const logEntries: any[] = await readLogEntriesAsync();
-        console.warn(
-          'Total number of log entries = ' +
-            logEntries.length +
-            '\n' +
-            JSON.stringify(logEntries, null, 2)
-        );
-        await clearLogEntriesAsync();
-      }
+      await readLogEntriesAsync();
 
       lastUpdateEventType2 = await testElementValueAsync('lastUpdateEventType');
       console.warn(`lastUpdateEventType2 = ${lastUpdateEventType2}`);

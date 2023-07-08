@@ -15,14 +15,12 @@ export default function App() {
       <Text style={styles.titleText}>Updates JS API test</Text>
       <Pressable
         style={styles.button}
-        onPress={() => setShowingView1((showingView1) => !showingView1)}
-      >
+        onPress={() => setShowingView1((showingView1) => !showingView1)}>
         <Text style={styles.buttonText}>Toggle view 1</Text>
       </Pressable>
       <Pressable
         style={styles.button}
-        onPress={() => setShowingView2((showingView2) => !showingView2)}
-      >
+        onPress={() => setShowingView2((showingView2) => !showingView2)}>
         <Text style={styles.buttonText}>Toggle view 2</Text>
       </Pressable>
       {showingView1 ? <UpdatesStatusView index={1} /> : null}
