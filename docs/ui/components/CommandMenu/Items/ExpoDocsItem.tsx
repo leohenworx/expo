@@ -4,6 +4,7 @@ import {
   BookOpen02Icon,
   GraduationHat02Icon,
   Home02Icon,
+  Hash02Icon,
 } from '@expo/styleguide-icons';
 import { Command } from 'cmdk';
 
@@ -19,7 +20,7 @@ import {
 } from '../utils';
 import { FootnoteSection } from './FootnoteSection';
 import { FootnoteArrowIcon } from './icons';
-import { contentStyle, footnoteStyle, itemIconWrapperStyle, itemStyle } from './styles';
+import { contentStyle, footnoteStyle, itemIconWrapperStyle } from './styles';
 
 import versions from '~/public/static/constants/versions.json';
 import { CALLOUT, FOOTNOTE } from '~/ui/components/Text';
@@ -32,10 +33,18 @@ type Props = {
   isNested?: boolean;
 };
 
+type ItemIconProps = {
+  url: string;
+  className?: string;
+  isNested?: boolean;
+};
+
 const isDev = process.env.NODE_ENV === 'development';
 
-const ItemIcon = ({ url, className }: { url: string; className?: string }) => {
-  if (isReferencePath(url)) {
+const ItemIcon = ({ url, className, isNested }: ItemIconProps) => {
+  if (isNested) {
+    return <Hash02Icon className={mergeClasses('icon-sm text-icon-tertiary', className)} />;
+  } else if (isReferencePath(url)) {
     return <DocsLogo className={mergeClasses('text-icon-secondary', className)} />;
   } else if (isEASPath(url)) {
     return <PlanEnterpriseIcon className={mergeClasses('text-icon-secondary', className)} />;
@@ -94,7 +103,7 @@ export const ExpoDocsItem = ({ item, onSelect, isNested }: Props) => {
       }}>
       <div className={mergeClasses('inline-flex items-center gap-3 break-words')}>
         <div css={itemIconWrapperStyle}>
-          <ItemIcon url={item.url} className={isNested ? 'icon-sm text-icon-tertiary' : ''} />
+          <ItemIcon url={item.url} isNested={isNested} />
         </div>
         <div>
           {lvl6 && (
