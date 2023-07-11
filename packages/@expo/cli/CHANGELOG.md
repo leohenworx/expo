@@ -7,6 +7,7 @@
 ### 🎉 New features
 
 - Add support for SSO users. ([#22945](https://github.com/expo/expo/pull/22945) by [@lzkb](https://github.com/lzkb))
+- Add styling to SSO auth redirect completion page. ([#23477](https://github.com/expo/expo/pull/23477) by [@wschurman](https://github.com/wschurman))
 
 ### 🐛 Bug fixes
 
