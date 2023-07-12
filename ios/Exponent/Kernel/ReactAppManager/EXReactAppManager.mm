@@ -125,6 +125,8 @@
                                                      logThreshold:[self logLevel]];
     _reactBridge = [[bridgeClass alloc] initWithDelegate:self launchOptions:[self launchOptionsForBridge]];
 
+    [_versionManager initializeAppContextWithBridge:_reactBridge];
+
     if (!_isHeadless) {
       // We don't want to run the whole JS app if app launches in the background,
       // so we're omitting creation of RCTRootView that triggers runApplication and sets up React view hierarchy.
@@ -485,7 +487,7 @@
 - (void)reloadBridge
 {
   if ([self enablesDeveloperTools]) {
-    [self.reactBridge reload];
+    [(RCTBridge *) self.reactBridge reload];
   }
 }
 

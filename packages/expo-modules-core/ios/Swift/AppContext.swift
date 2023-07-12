@@ -83,6 +83,18 @@ public final class AppContext: NSObject {
     listenToClientAppNotifications()
   }
 
+  @objc
+  public convenience init(
+    bridge: RCTBridge,
+    legacyModulesProxy: LegacyNativeModulesProxy? = nil,
+    legacyModuleRegistry: EXModuleRegistry? = nil
+  ) {
+    self.init()
+    self.reactBridge = bridge
+    self.legacyModulesProxy = legacyModulesProxy
+    self.legacyModuleRegistry = legacyModuleRegistry
+  }
+
   @discardableResult
   public func useModulesProvider(_ providerName: String) -> Self {
     return useModulesProvider(Self.modulesProvider(withName: providerName))

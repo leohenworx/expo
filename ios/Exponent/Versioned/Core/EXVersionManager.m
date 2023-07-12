@@ -10,7 +10,6 @@
 #import "EXScopedBridgeModule.h"
 #import "EXStatusBarManager.h"
 #import "EXUnversioned.h"
-#import "EXScopedFileSystemModule.h"
 #import "EXTest.h"
 
 #import <React/RCTAssert.h>
@@ -31,16 +30,11 @@
 #import <React/RCTLocalAssetImageLoader.h>
 #import <React/RCTGIFImageDecoder.h>
 #import <React/RCTImageLoader.h>
-#import <React/RCTJSIExecutorRuntimeInstaller.h>
 #import <React/RCTInspectorDevServerHelper.h>
+#import <React/CoreModulesPlugins.h>
 
-#import <objc/message.h>
-
-#import <ExpoModulesCore/EXDefines.h>
-#import <ExpoModulesCore/EXModuleRegistry.h>
-#import <ExpoModulesCore/EXModuleRegistryDelegate.h>
-#import <ExpoModulesCore/EXModuleRegistryHolderReactModule.h>
 #import <ExpoModulesCore/EXNativeModulesProxy.h>
+#import <ExpoModulesCore/EXModuleRegistryHolderReactModule.h>
 #import <EXMediaLibrary/EXMediaLibraryImageLoader.h>
 #import <EXFileSystem/EXFileSystem.h>
 
@@ -52,19 +46,6 @@
 #import "EXManifests-Swift.h"
 #endif
 
-#import <RNReanimated/REAModule.h>
-#import <RNReanimated/REAEventDispatcher.h>
-#import <RNReanimated/REAUIManager.h>
-#import <RNReanimated/NativeProxy.h>
-#import <RNReanimated/ReanimatedVersion.h>
-
-#import <React/RCTCxxBridgeDelegate.h>
-#import <React/CoreModulesPlugins.h>
-#import <ReactCommon/RCTTurboModuleManager.h>
-#import <reacthermes/HermesExecutorFactory.h>
-#import <React/JSCExecutorFactory.h>
-#import <strings.h>
-
 // Import 3rd party modules that need to be scoped.
 #import <RNCAsyncStorage/RNCAsyncStorage.h>
 #import "RNCWebViewManager.h"
@@ -73,14 +54,10 @@
 #import "EXScopedModuleRegistryAdapter.h"
 #import "EXScopedModuleRegistryDelegate.h"
 
+#import "Expo_Go-Swift.h"
+
 RCT_EXTERN NSDictionary<NSString *, NSDictionary *> *EXGetScopedModuleClasses(void);
 RCT_EXTERN void EXRegisterScopedModule(Class, ...);
-
-@interface RCTEventDispatcher (REAnimated)
-
-- (void)setBridge:(RCTBridge*)bridge;
-
-@end
 
 // this is needed because RCTPerfMonitor does not declare a public interface
 // anywhere that we can import.
@@ -97,14 +74,18 @@ RCT_EXTERN void EXRegisterScopedModule(Class, ...);
 
 @end
 
-@interface EXVersionManager () <RCTTurboModuleManagerDelegate>
+@interface EXVersionManager ()
 
 // is this the first time this ABI has been touched at runtime?
 @property (nonatomic, assign) BOOL isFirstLoad;
 @property (nonatomic, strong) NSDictionary *params;
 @property (nonatomic, strong) EXManifestsManifest *manifest;
-@property (nonatomic, strong) RCTTurboModuleManager *turboModuleManager;
 @property (nonatomic, strong) EXVersionedNetworkInterceptor *networkInterceptor;
+@property (nonatomic, strong) EXVersionedAppContextManager *versionedAppContextManager;
+
+// Legacy
+@property (nonatomic, strong) EXModuleRegistry *legacyModuleRegistry;
+@property (nonatomic, strong) EXNativeModulesProxy *legacyModulesProxy;
 
 @end
 
@@ -179,6 +160,40 @@ RCT_EXTERN void EXRegisterScopedModule(Class, ...);
 - (void)invalidate {
   self.networkInterceptor = nil;
 }
+
+#pragma mark - Expo Modules
+
+- (void)initializeAppContextWithBridge:(nonnull RCTBridge *)bridge
+{
+  EXModuleRegistryProvider *moduleRegistryProvider = [[EXModuleRegistryProvider alloc] initWithSingletonModules:_params[@"singletonModules"]];
+
+  Class resolverClass = [EXScopedModuleRegistryDelegate class];
+  if (_params[@"moduleRegistryDelegateClass"] && _params[@"moduleRegistryDelegateClass"] != [NSNull null]) {
+    resolverClass = _params[@"moduleRegistryDelegateClass"];
+  }
+
+  id<EXModuleRegistryDelegate> moduleRegistryDelegate = [[resolverClass alloc] initWithParams:_params];
+  [moduleRegistryProvider setModuleRegistryDelegate:moduleRegistryDelegate];
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  EXScopedModuleRegistryAdapter *moduleRegistryAdapter = [[EXScopedModuleRegistryAdapter alloc] initWithModuleRegistryProvider:moduleRegistryProvider];
+#pragma clang diagnostic pop
+
+  _legacyModuleRegistry = [moduleRegistryAdapter moduleRegistryForParams:_params
+                                             forExperienceStableLegacyId:_manifest.stableLegacyId
+                                                                scopeKey:_manifest.scopeKey
+                                                                manifest:_manifest
+                                                      withKernelServices:_params[@"services"]];
+
+  _legacyModulesProxy = [[EXNativeModulesProxy alloc] initWithCustomModuleRegistry:_legacyModuleRegistry];
+
+  _versionedAppContextManager = [[EXVersionedAppContextManager alloc] initWithBridge:bridge
+                                                                  legacyModulesProxy:_legacyModulesProxy
+                                                                legacyModuleRegistry:_legacyModuleRegistry];
+}
+
+#pragma mark - Dev menu
 
 - (NSDictionary<NSString *, NSString *> *)devMenuItemsForBridge:(id)bridge
 {
@@ -399,33 +414,19 @@ RCT_EXTERN void EXRegisterScopedModule(Class, ...);
     [extraModules addObject:homeModule];
   }
 
-  EXModuleRegistryProvider *moduleRegistryProvider = [[EXModuleRegistryProvider alloc] initWithSingletonModules:params[@"singletonModules"]];
-
-  Class resolverClass = [EXScopedModuleRegistryDelegate class];
-  if (params[@"moduleRegistryDelegateClass"] && params[@"moduleRegistryDelegateClass"] != [NSNull null]) {
-    resolverClass = params[@"moduleRegistryDelegateClass"];
-  }
-
-  id<EXModuleRegistryDelegate> moduleRegistryDelegate = [[resolverClass alloc] initWithParams:params];
-  [moduleRegistryProvider setModuleRegistryDelegate:moduleRegistryDelegate];
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  EXScopedModuleRegistryAdapter *moduleRegistryAdapter = [[EXScopedModuleRegistryAdapter alloc] initWithModuleRegistryProvider:moduleRegistryProvider];
-#pragma clang diagnostic pop
-
-  EXModuleRegistry *moduleRegistry = [moduleRegistryAdapter moduleRegistryForParams:params
-                                                        forExperienceStableLegacyId:self.manifest.stableLegacyId
-                                                                           scopeKey:self.manifest.scopeKey
-                                                                           manifest:self.manifest
-                                                                 withKernelServices:services];
+  // Initialize the AppContext and legacy proxy and module registry.
+  [self initializeAppContextWithBridge:bridge];
 
   // Adding EXNativeModulesProxy with the custom moduleRegistry.
-  EXNativeModulesProxy *expoNativeModulesProxy = [[EXNativeModulesProxy alloc] initWithCustomModuleRegistry:moduleRegistry];
-  [extraModules addObject:expoNativeModulesProxy];
+  [extraModules addObject:_legacyModulesProxy];
 
   // Adding the way to access the module registry from RCTBridgeModules.
-  [extraModules addObject:[[EXModuleRegistryHolderReactModule alloc] initWithModuleRegistry:moduleRegistry]];
+  [extraModules addObject:[[EXModuleRegistryHolderReactModule alloc] initWithModuleRegistry:_legacyModuleRegistry]];
+
+//  ExpoBridgeModule *expoBridgeModule = [[ExpoBridgeModule alloc] init];
+//  [expoBridgeModule setBridge:(RCTBridge *)bridge];
+//  [expoBridgeModule legacyProxyDidSetBridgeWithLegacyModulesProxy:expoNativeModulesProxy legacyModuleRegistry:moduleRegistry];
+//  [extraModules addObject:expoBridgeModule];
 
   if (!RCTTurboModuleEnabled()) {
     [extraModules addObject:[self getModuleInstanceFromClass:[self getModuleClassFromName:"DevSettings"]]];
@@ -486,16 +487,16 @@ RCT_EXTERN void EXRegisterScopedModule(Class, ...);
 
 - (Class)getModuleClassFromName:(const char *)name
 {
-  if (std::string(name) == "DevSettings") {
+  if (strcmp(name, "DevSettings") == 0) {
     return EXDevSettings.class;
   }
-  if (std::string(name) == "DevMenu") {
+  if (strcmp(name, "DevMenu") == 0) {
     if (![_params[@"isStandardDevMenuAllowed"] boolValue] || ![_params[@"isDeveloper"] boolValue]) {
       // non-kernel, or non-development kernel, uses expo menu instead of RCTDevMenu
       return EXDisabledDevMenu.class;
     }
   }
-  if (std::string(name) == "RedBox") {
+  if (strcmp(name, "RedBox") == 0) {
     if (![_params[@"isDeveloper"] boolValue]) {
       // user-facing (not debugging).
       // additionally disable RCTRedBox
@@ -503,15 +504,6 @@ RCT_EXTERN void EXRegisterScopedModule(Class, ...);
     }
   }
   return RCTCoreModulesClassProvider(name);
-}
-
-/**
- Returns a pure C++ object wrapping an exported unimodule instance.
- */
-- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:(const std::string &)name
-                                                      jsInvoker:(std::shared_ptr<facebook::react::CallInvoker>)jsInvoker
-{
-  return nullptr;
 }
 
 - (id<RCTTurboModule>)getModuleInstanceFromClass:(Class)moduleClass
@@ -559,70 +551,14 @@ RCT_EXTERN void EXRegisterScopedModule(Class, ...);
   return [moduleClass new];
 }
 
-- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:(const std::string &)name
-                                                     initParams:(const facebook::react::ObjCTurboModule::InitParams &)params
-{
-  // TODO: ADD
-  return nullptr;
-}
-
 - (BOOL)_isOpeningHomeInProductionMode
 {
   return _params[@"browserModuleClass"] && !self.manifest.developer;
 }
 
-- (void *)versionedJsExecutorFactoryForBridge:(RCTBridge *)bridge
+- (void *)versionedJsExecutorFactoryForBridge:(nonnull RCTBridge *)bridge
 {
-  [bridge moduleForClass:[RCTUIManager class]];
-  REAUIManager *reaUiManager = [REAUIManager new];
-  [reaUiManager setBridge:bridge];
-  RCTUIManager *uiManager = reaUiManager;
-  [bridge updateModuleWithInstance:uiManager];
-
-  [bridge moduleForClass:[RCTEventDispatcher class]];
-  RCTEventDispatcher *eventDispatcher = [REAEventDispatcher new];
-  RCTCallableJSModules *callableJSModules = [RCTCallableJSModules new];
-  [bridge setValue:callableJSModules forKey:@"_callableJSModules"];
-  [callableJSModules setBridge:bridge];
-  [eventDispatcher setValue:callableJSModules forKey:@"_callableJSModules"];
-  [eventDispatcher setValue:bridge forKey:@"_bridge"];
-  [eventDispatcher initialize];
-  [bridge updateModuleWithInstance:eventDispatcher];
-
-  EX_WEAKIFY(self);
-  const auto executor = [EXWeak_self, bridge](facebook::jsi::Runtime &runtime) {
-    if (!bridge) {
-      return;
-    }
-    EX_ENSURE_STRONGIFY(self);
-    auto reanimatedModule = reanimated::createReanimatedModule(bridge, bridge.jsCallInvoker);
-    auto workletRuntimeValue = runtime
-        .global()
-        .getProperty(runtime, "ArrayBuffer")
-        .asObject(runtime)
-        .asFunction(runtime)
-        .callAsConstructor(runtime, {static_cast<double>(sizeof(void*))});
-    uintptr_t* workletRuntimeData = reinterpret_cast<uintptr_t*>(
-        workletRuntimeValue.getObject(runtime).getArrayBuffer(runtime).data(runtime));
-    workletRuntimeData[0] = reinterpret_cast<uintptr_t>(reanimatedModule->runtime.get());
-    runtime.global().setProperty(
-        runtime,
-        "_WORKLET_RUNTIME",
-        workletRuntimeValue);
-    runtime.global().setProperty(
-        runtime,
-        "_REANIMATED_VERSION_CPP",
-        reanimated::getReanimatedVersionString(runtime));
-
-    runtime.global().setProperty(
-         runtime,
-         jsi::PropNameID::forAscii(runtime, "__reanimatedModuleProxy"),
-         jsi::Object::createFromHostObject(runtime, reanimatedModule));
-  };
-  if ([self.manifest.jsEngine isEqualToString:@"hermes"]) {
-    return new facebook::react::HermesExecutorFactory(RCTJSIExecutorRuntimeInstaller(executor));
-  }
-  return new facebook::react::JSCExecutorFactory(RCTJSIExecutorRuntimeInstaller(executor));
+  return [EXVersionUtils versionedJsExecutorFactoryForBridge:bridge engine:_manifest.jsEngine];
 }
 
 @end

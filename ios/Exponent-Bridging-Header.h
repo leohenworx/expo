@@ -6,5 +6,3 @@
 #import "EXKernel.h"
 #import "EXRootViewController.h"
 #import "EXAppViewController.h"
-
-#import <ExpoModulesCore/EXModuleRegistryProvider.h>

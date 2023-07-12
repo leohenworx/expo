@@ -2,6 +2,9 @@
 
 #import <Foundation/Foundation.h>
 #import <React/RCTLog.h>
+#import <React/RCTBridge.h>
+
+#import "EXVersionUtils.h"
 
 @class EXManifestsManifest;
 
@@ -16,6 +19,8 @@
 - (void)bridgeWillStartLoading:(id)bridge;
 - (void)bridgeFinishedLoading:(id)bridge;
 - (void)invalidate;
+
+- (void)initializeAppContextWithBridge:(nonnull RCTBridge *)bridge;
 
 /**
  *  Dev tools (implementation varies by SDK)
