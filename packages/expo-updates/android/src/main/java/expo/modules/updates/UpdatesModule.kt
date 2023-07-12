@@ -28,6 +28,7 @@ import expo.modules.updates.manifest.UpdateManifest
 // these unused imports must stay because of versioning
 /* ktlint-disable no-unused-imports */
 import expo.modules.updates.UpdatesConfiguration
+
 /* ktlint-enable no-unused-imports */
 
 /**
@@ -137,7 +138,6 @@ class UpdatesModule(
     }
   }
 
-<<<<<<< HEAD
   // Used internally by @expo/use-updates useUpdates() to get its initial state
   @ExpoMethod
   fun getNativeStateMachineContextAsync(promise: Promise) {
@@ -160,31 +160,6 @@ class UpdatesModule(
     }
   }
 
-||||||| parent of 91f7134aea (Implement nativeStateMachineContext getter for Android)
-=======
-  // Used internally by @expo/use-updates useUpdates() to get its initial state
-  @ExpoMethod
-  fun nativeStateMachineContext(promise: Promise) {
-    try {
-      val updatesServiceLocal = updatesService
-      if (!updatesServiceLocal!!.configuration.isEnabled) {
-        promise.reject(
-          "ERR_UPDATES_DISABLED",
-          "You cannot check for updates when expo-updates is not enabled."
-        )
-        return
-      }
-      val context = updatesServiceLocal.stateMachine?.context ?: UpdatesStateContext()
-      promise.resolve(context.bundle)
-    } catch (e: IllegalStateException) {
-      promise.reject(
-        "ERR_UPDATES_CHECK",
-        "The updates module controller has not been properly initialized. If you're using a development client, you cannot check for updates. Otherwise, make sure you have called the native method UpdatesController.initialize()."
-      )
-    }
-  }
-
->>>>>>> 91f7134aea (Implement nativeStateMachineContext getter for Android)
   @ExpoMethod
   fun checkForUpdateAsync(promise: Promise) {
     try {

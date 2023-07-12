@@ -253,7 +253,6 @@ public final class UpdatesUtils: NSObject {
 
   // MARK: - Internal methods
 
-<<<<<<< HEAD
   internal static func defaultNativeStateMachineContextJson() -> [String: Any?] {
     return UpdatesStateContext().json
   }
@@ -268,22 +267,6 @@ public final class UpdatesUtils: NSObject {
     }
   }
 
-||||||| parent of 280d29d3ed (Implement nativeStateMachineContext getter for iOS)
-=======
-  internal static func defaultNativeStateMachineContextJson() -> [String: Any?] {
-    return UpdatesStateContext().json
-  }
-
-  internal static func getNativeStateMachineContextJson() -> [String: Any?] {
-    do {
-      let constants = try startJSAPICall()
-      return constants.context?.json ?? defaultNativeStateMachineContextJson()
-    } catch {
-      return defaultNativeStateMachineContextJson()
-    }
-  }
-
->>>>>>> 280d29d3ed (Implement nativeStateMachineContext getter for iOS)
   internal static func shouldCheckForUpdate(withConfig config: UpdatesConfig) -> Bool {
     func isConnectedToWifi() -> Bool {
       do {
